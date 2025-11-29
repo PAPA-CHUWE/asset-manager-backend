@@ -55,60 +55,48 @@ router.post("/create", verifyToken, adminOnly, async (req, res) => {
       const { first_name, last_name, email, role, department, password } = req.body;
   
       if (!first_name || !last_name || !email || !role || !department || !password) {
-        return res.status(400).json({
-          success: false,
-          message: "Missing required fields",
-        });
+        return res.status(400).json({ success: false, message: "Missing required fields" });
       }
   
-      // 1️⃣ Check if email exists
-      const exists = await sql`
-        SELECT * FROM auth.users WHERE email = ${email}
-      `;
-  
-      if (exists.length > 0) {
-        return res.status(400).json({
-          success: false,
-          message: "A user with this email already exists",
-        });
-      }
-  
-      // 2️⃣ Hash the password
-      const hashedPassword = await bcrypt.hash(password, 10);
-  
-      // 3️⃣ Insert into auth.users
-      const [authUser] = await sql`
-        INSERT INTO auth.users (email, password)
-        VALUES (${email}, ${hashedPassword})
-        RETURNING id
-      `;
-  
-      const userId = authUser.id;
-  
-      // 4️⃣ Insert into public.users
-      await sql`
-        INSERT INTO public.users (id, first_name, last_name, email, role, department)
-        VALUES (${userId}, ${first_name}, ${last_name}, ${email}, ${role}, ${department})
-      `;
-  
-      // 5️⃣ Insert into public.profiles
-      await sql`
-        INSERT INTO public.profiles (id, full_name, role)
-        VALUES (${userId}, ${first_name + " " + last_name}, ${role})
-      `;
-  
-      res.status(201).json({
-        success: true,
-        message: "User created successfully",
-        userId,
+      // 1️⃣ Create user in Supabase Auth
+      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true
       });
-    } catch (error) {
-      console.error("❌ Error creating user:", error);
-      res.status(500).json({
-        success: false,
-        message: "Server error",
-        error: error.message,
-      });
+  
+      if (authError) return res.status(400).json({ success: false, message: authError.message });
+  
+      const userId = authUser.user.id;
+      const fullName = `${first_name} ${last_name}`;
+  
+      // 2️⃣ Insert into users table
+      const { error: userError } = await supabase.from("users").insert([
+        {
+          id: userId,
+          first_name,
+          last_name,
+          email,
+          role,
+          department
+        }
+      ]);
+      if (userError) return res.status(400).json({ success: false, message: userError.message });
+  
+      // 3️⃣ Insert into profiles table
+      const { error: profileError } = await supabase.from("profiles").insert([
+        {
+          id: userId,
+          full_name: fullName,
+          role
+        }
+      ]);
+      if (profileError) return res.status(400).json({ success: false, message: profileError.message });
+  
+      res.status(201).json({ success: true, message: "User created successfully", userId });
+    } catch (err) {
+      console.error("❌ Error creating user:", err);
+      res.status(500).json({ success: false, message: "Server error", error: err.message });
     }
   });
 /* -----------------------------------------
