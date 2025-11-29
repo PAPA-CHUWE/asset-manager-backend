@@ -39,3 +39,20 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   testConnection();
 });
+// Health check endpoint
+app.get('/health', async (req, res) => {
+  try {
+    const result = await sql`SELECT now() AS current_time`;
+    res.status(200).json({
+      status: 'OK',
+      dbTime: result[0].current_time,
+      message: 'Server is up and database is connected',
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'ERROR',
+      message: 'Database connection failed',
+      error: error.message,
+    });
+  }
+});
