@@ -3,7 +3,6 @@ import express from "express";
 import postgres from "postgres";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -59,7 +58,7 @@ const adminOnly = (req, res, next) => {
 ----------------------------------------- */
 router.post("/create", verifyToken, adminOnly, async (req, res) => {
     try {
-      const { first_name, last_name, email, role, department, password } = req.body;
+      const { first_name, last_name, email,phone, role, department, password } = req.body;
   
       if (!first_name || !last_name || !email || !role || !department || !password) {
         return res.status(400).json({ success: false, message: "Missing required fields" });
@@ -84,6 +83,7 @@ router.post("/create", verifyToken, adminOnly, async (req, res) => {
           first_name,
           last_name,
           email,
+          phone,
           role,
           department
         }
@@ -112,7 +112,7 @@ router.post("/create", verifyToken, adminOnly, async (req, res) => {
 router.get("/list", verifyToken, adminOnly, async (req, res) => {
   try {
     const users = await sql`
-      SELECT id, first_name, last_name, email, role, department, created_at
+      SELECT id, first_name, last_name, email,phone, role, department, created_at
       FROM public.users
       ORDER BY created_at DESC;
     `;
