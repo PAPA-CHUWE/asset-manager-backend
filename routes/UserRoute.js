@@ -124,6 +124,48 @@ router.get("/list", verifyToken, adminOnly, async (req, res) => {
   }
 });
 
+
+router.get("/list-user/:id", verifyToken, adminOnly, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const users = await sql`
+        SELECT id, first_name, last_name, email, phone, role, department
+        FROM public.users
+        WHERE id = ${id}
+        LIMIT 1
+      `;
+      if (users.length === 0) return res.status(404).json({ success: false, message: "User not found" });
+      res.json({ success: true, user: users[0] });
+    } catch (err) {
+      console.error("❌ Error fetching user:", err);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+  
+  /* -----------------------------------------
+     UPDATE USER (PUT /admin/users/:id)
+  ----------------------------------------- */
+  router.put("/update/:id", verifyToken, adminOnly, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { first_name, last_name, email, phone, role, department } = req.body;
+  
+      const { error: updateError } = await supabase.from("users").update({ first_name, last_name, email, phone, role, department }).eq("id", id);
+      if (updateError) return res.status(400).json({ success: false, message: updateError.message });
+  
+      const fullName = `${first_name} ${last_name}`;
+      const { error: profileError } = await supabase.from("profiles").update({ full_name: fullName, role }).eq("id", id);
+      if (profileError) return res.status(400).json({ success: false, message: profileError.message });
+  
+      res.json({ success: true, message: "User updated successfully" });
+    } catch (err) {
+      console.error("❌ Error updating user:", err);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+  
+
+  
 /* -----------------------------------------
    DELETE USER (ADMIN ONLY)
 ----------------------------------------- */
