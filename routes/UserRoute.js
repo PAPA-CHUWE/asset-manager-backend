@@ -14,6 +14,7 @@ const sql = postgres(process.env.DATABASE_URL, {
   ssl: { rejectUnauthorized: false },
 });
 
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 /* -----------------------------------------
    VERIFY TOKEN MIDDLEWARE
 ----------------------------------------- */
