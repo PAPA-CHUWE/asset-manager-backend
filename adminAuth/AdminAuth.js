@@ -6,65 +6,68 @@ import { createClient } from '@supabase/supabase-js';
 dotenv.config();
 
 const router = express.Router();
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-
 router.use(bodyParser.json());
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 // ----------------- LOGIN -----------------
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    // 1️⃣ Sign in with Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    if (authError) return res.status(401).json({ error: authError.message });
 
-    if (error) return res.status(401).json({ error: error.message });
+    const userId = authData.user.id;
 
-    // Only allow admin users
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
+    // 2️⃣ Fetch role from 'users' table
+    const { data: userData, error: userError } = await supabase
+      .from('users')
       .select('*')
-      .eq('id', data.user.id)
+      .eq('id', userId)
       .single();
 
-    if (profileError || profileData.role !== 'admin') {
+    if (userError || !userData) {
+      return res.status(403).json({ error: 'User not found in users table' });
+    }
+
+    // 3️⃣ Check if admin
+    if (userData.role !== 'admin') {
       return res.status(403).json({ error: 'Not authorized as admin' });
     }
 
+    // 4️⃣ Optionally fetch profile
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
     res.json({
       message: 'Login successful',
-      user: data.user,
-      session: data.session,
+      user: {
+        ...authData.user,
+        role: userData.role,
+        department: userData.department,
+        full_name: profileData?.full_name || ''
+      },
+      session: authData.session
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // ----------------- LOGOUT -----------------
 router.post('/logout', async (req, res) => {
   try {
+    // Supabase server-side sign out
     const { error } = await supabase.auth.signOut();
-
     if (error) return res.status(400).json({ error: error.message });
 
     res.json({ message: 'Logged out successfully' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ----------------- PASSWORD RESET -----------------
-router.post('/reset-password', async (req, res) => {
-  const { email } = req.body;
-
-  try {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://your-app-url.com/login',
-    });
-
-    if (error) return res.status(400).json({ error: error.message });
-
-    res.json({ message: 'Password reset email sent', data });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
