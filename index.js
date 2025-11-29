@@ -3,7 +3,8 @@ import express from 'express';
 import postgres from 'postgres';
 import dotenv from 'dotenv';
 import cors from 'cors'; 
-import AdminAuth from './adminAuth/AdminAuth.js'; // Your auth routes
+import AdminAuth from './adminAuth/AdminAuth.js'; 
+import UserRoute from "./routes/UserRoute.js"
 import { createAdminUsers } from './utils/GenerateAdmin.js';
 
 dotenv.config(); // Load environment variables
@@ -40,6 +41,7 @@ async function testConnection() {
 
 // Mount Admin auth routes
 app.use('/admin/auth', AdminAuth);
+app.use('/admin/users', UserRoute);
 
 // Start server
 app.listen(PORT, () => {
