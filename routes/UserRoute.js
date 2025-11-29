@@ -5,7 +5,15 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+
 dotenv.config();
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const router = express.Router();
 
@@ -14,7 +22,6 @@ const sql = postgres(process.env.DATABASE_URL, {
   ssl: { rejectUnauthorized: false },
 });
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 /* -----------------------------------------
    VERIFY TOKEN MIDDLEWARE
 ----------------------------------------- */
