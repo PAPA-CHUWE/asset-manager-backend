@@ -6,7 +6,6 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
 import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
 
 dotenv.config();
 
