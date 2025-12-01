@@ -6,6 +6,8 @@ import cors from 'cors';
 import AdminAuth from './adminAuth/AdminAuth.js'; 
 import UserRoute from "./routes/UserRoute.js"
 import { createAdminUsers } from './utils/GenerateAdmin.js';
+import AssetRoute from './routes/AssetRoute.js';
+import CategoriesRoute from './routes/CategoriesRoute.js';
 
 dotenv.config(); // Load environment variables
 
@@ -43,6 +45,8 @@ async function testConnection() {
 // Mount Admin auth routes
 app.use('/admin/auth', AdminAuth);
 app.use('/admin/users', UserRoute);
+app.use('/admin/assets', AssetRoute);
+app.use('/admin/categories', CategoriesRoute);
 
 // Start server
 app.listen(PORT, () => {
