@@ -52,7 +52,7 @@ router.get("/", verifyToken, async (req, res) => {
     if (error) throw error;
 
     res.json({ success: true, categories: data });
-  } catch (err: any) {
+  } catch (err) {
     console.error("❌ Error fetching categories:", err);
     res.status(500).json({ success: false, message: err.message });
   }
@@ -68,7 +68,7 @@ router.post("/", verifyToken, adminOnly, async (req, res) => {
     if (error) throw error;
 
     res.status(201).json({ success: true, category: data[0] });
-  } catch (err: any) {
+  } catch (err) {
     console.error("❌ Error creating category:", err);
     res.status(500).json({ success: false, message: err.message });
   }
@@ -86,7 +86,7 @@ router.put("/:id", verifyToken, adminOnly, async (req, res) => {
     if (error) throw error;
 
     res.json({ success: true, category: data[0] });
-  } catch (err: any) {
+  } catch (err) {
     console.error("❌ Error updating category:", err);
     res.status(500).json({ success: false, message: err.message });
   }
@@ -103,7 +103,7 @@ router.delete("/:id", verifyToken, adminOnly, async (req, res) => {
     if (error) throw error;
 
     res.json({ success: true, message: "Category deleted successfully" });
-  } catch (err: any) {
+  } catch (err) {
     console.error("❌ Error deleting category:", err);
     res.status(500).json({ success: false, message: err.message });
   }

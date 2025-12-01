@@ -59,7 +59,7 @@ router.get("/", verifyToken, async (req, res) => {
     if (error) throw error;
 
     res.json({ success: true, assets: data });
-  } catch (err: any) {
+  } catch (err) {
     console.error("❌ Error fetching assets:", err);
     res.status(500).json({ success: false, message: err.message });
   }
@@ -80,7 +80,7 @@ router.post("/", verifyToken, async (req, res) => {
     if (error) throw error;
 
     res.status(201).json({ success: true, asset: data[0] });
-  } catch (err: any) {
+  } catch (err) {
     console.error("❌ Error creating asset:", err);
     res.status(500).json({ success: false, message: err.message });
   }
@@ -102,7 +102,7 @@ router.put("/:id", verifyToken, adminOnly, async (req, res) => {
     if (error) throw error;
 
     res.json({ success: true, asset: data[0] });
-  } catch (err: any) {
+  } catch (err) {
     console.error("❌ Error updating asset:", err);
     res.status(500).json({ success: false, message: err.message });
   }
@@ -119,7 +119,7 @@ router.delete("/:id", verifyToken, adminOnly, async (req, res) => {
     if (error) throw error;
 
     res.json({ success: true, message: "Asset deleted successfully" });
-  } catch (err: any) {
+  } catch (err) {
     console.error("❌ Error deleting asset:", err);
     res.status(500).json({ success: false, message: err.message });
   }
