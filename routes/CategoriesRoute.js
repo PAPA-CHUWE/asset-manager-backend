@@ -46,7 +46,7 @@ const adminOnly = (req, res, next) => {
 /* -----------------------------------------
    GET ALL CATEGORIES
 ----------------------------------------- */
-router.get("/", verifyToken, async (req, res) => {
+router.get("/list/all", verifyToken, async (req, res) => {
   try {
     const { data, error } = await supabase.from("asset_categories").select("*");
     if (error) throw error;
@@ -57,11 +57,23 @@ router.get("/", verifyToken, async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+router.get("/list/:id", verifyToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { data, error } = await supabase.from("asset_categories").select("*").eq("id", id);
+      if (error) throw error;
+  
+      res.json({ success: true, categories: data });
+    } catch (err) {
+      console.error("❌ Error fetching categories:", err);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
 
 /* -----------------------------------------
    CREATE NEW CATEGORY (ADMIN ONLY)
 ----------------------------------------- */
-router.post("/", verifyToken, adminOnly, async (req, res) => {
+router.post("/create", verifyToken, adminOnly, async (req, res) => {
   try {
     const { name, description } = req.body;
     const { data, error } = await supabase.from("asset_categories").insert([{ name, description }]);
@@ -77,7 +89,7 @@ router.post("/", verifyToken, adminOnly, async (req, res) => {
 /* -----------------------------------------
    UPDATE CATEGORY (ADMIN ONLY)
 ----------------------------------------- */
-router.put("/:id", verifyToken, adminOnly, async (req, res) => {
+router.put("/update/:id", verifyToken, adminOnly, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, description } = req.body;
@@ -95,7 +107,7 @@ router.put("/:id", verifyToken, adminOnly, async (req, res) => {
 /* -----------------------------------------
    DELETE CATEGORY (ADMIN ONLY)
 ----------------------------------------- */
-router.delete("/:id", verifyToken, adminOnly, async (req, res) => {
+router.delete("/delete/:id", verifyToken, adminOnly, async (req, res) => {
   try {
     const { id } = req.params;
 
