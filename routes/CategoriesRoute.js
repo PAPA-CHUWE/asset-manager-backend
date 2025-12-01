@@ -74,17 +74,28 @@ router.get("/list/:id", verifyToken, async (req, res) => {
    CREATE NEW CATEGORY (ADMIN ONLY)
 ----------------------------------------- */
 router.post("/create", verifyToken, adminOnly, async (req, res) => {
-  try {
-    const { name, description } = req.body;
-    const { data, error } = await supabase.from("asset_categories").insert([{ name, description }]);
-    if (error) throw error;
-
-    res.status(201).json({ success: true, category: data[0] });
-  } catch (err) {
-    console.error("❌ Error creating category:", err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
+    try {
+      const { name, description } = req.body;
+  
+      // Insert and return the inserted row
+      const { data, error } = await supabase
+        .from("asset_categories")
+        .insert([{ name, description }])
+        .select(); // ✅ ensures data is returned
+  
+      if (error) throw error;
+  
+      if (!data || data.length === 0) {
+        return res.status(500).json({ success: false, message: "Failed to create category" });
+      }
+  
+      res.status(201).json({ success: true, category: data[0] });
+    } catch (err) {
+      console.error("❌ Error creating category:", err);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+  
 
 /* -----------------------------------------
    UPDATE CATEGORY (ADMIN ONLY)
