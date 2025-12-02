@@ -8,8 +8,8 @@ dotenv.config();
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
-
 const supabase = createClient(supabaseUrl, supabaseKey);
+
 const router = express.Router();
 
 /* -----------------------------------------
@@ -17,13 +17,11 @@ const router = express.Router();
 ----------------------------------------- */
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
-
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ success: false, message: "Missing token" });
   }
 
   const token = authHeader.split(" ")[1];
-
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
@@ -45,20 +43,36 @@ const adminOnly = (req, res, next) => {
 
 /* -----------------------------------------
    GET ALL ASSETS
+   Optional: include category_name & department_name
 ----------------------------------------- */
-router.get("/", verifyToken, async (req, res) => {
+router.get("/list/all", verifyToken, async (req, res) => {
   try {
-    const { role, id } = req.user;
-    let query = supabase.from("assets").select("*");
+    const { data, error } = await supabase
+      .from("assets")
+      .select(`
+        id,
+        name,
+        category_id,
+        department_id,
+        date_purchased,
+        cost,
+        created_by,
+        created_at,
+        asset_categories!inner(name),
+        departments!inner(name)
+      `);
 
-    if (role !== "admin") {
-      query = query.eq("created_by", id); // Users see only their own assets
-    }
-
-    const { data, error } = await query;
     if (error) throw error;
 
-    res.json({ success: true, assets: data });
+    // Map joined data to frontend-friendly keys
+    const assets = data.map(a => ({
+      ...a,
+      category_name: a.asset_categories?.name,
+      department_name: a.departments?.name,
+      created_by_name: a.created_by // optional: could join with users table if needed
+    }));
+
+    res.json({ success: true, assets });
   } catch (err) {
     console.error("❌ Error fetching assets:", err);
     res.status(500).json({ success: false, message: err.message });
@@ -66,18 +80,37 @@ router.get("/", verifyToken, async (req, res) => {
 });
 
 /* -----------------------------------------
-   CREATE NEW ASSET
+   GET ASSET BY ID
 ----------------------------------------- */
-router.post("/", verifyToken, async (req, res) => {
+router.get("/list/:id", verifyToken, async (req, res) => {
   try {
-    const { name, category_id, date_purchased, cost, department_id } = req.body;
-    const { id } = req.user;
-
-    const { data, error } = await supabase.from("assets").insert([
-      { name, category_id, date_purchased, cost, department_id, created_by: id }
-    ]);
+    const { id } = req.params;
+    const { data, error } = await supabase.from("assets").select("*").eq("id", id);
 
     if (error) throw error;
+    if (!data || data.length === 0) return res.status(404).json({ success: false, message: "Asset not found" });
+
+    res.json({ success: true, asset: data[0] });
+  } catch (err) {
+    console.error("❌ Error fetching asset:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/* -----------------------------------------
+   CREATE NEW ASSET (ADMIN ONLY)
+----------------------------------------- */
+router.post("/create", verifyToken, adminOnly, async (req, res) => {
+  try {
+    const { name, category_id, department_id, date_purchased, cost } = req.body;
+
+    const { data, error } = await supabase
+      .from("assets")
+      .insert([{ name, category_id, department_id, date_purchased, cost, created_by: req.user.id }])
+      .select();
+
+    if (error) throw error;
+    if (!data || data.length === 0) return res.status(500).json({ success: false, message: "Failed to create asset" });
 
     res.status(201).json({ success: true, asset: data[0] });
   } catch (err) {
@@ -89,17 +122,19 @@ router.post("/", verifyToken, async (req, res) => {
 /* -----------------------------------------
    UPDATE ASSET (ADMIN ONLY)
 ----------------------------------------- */
-router.put("/:id", verifyToken, adminOnly, async (req, res) => {
+router.put("/update/:id", verifyToken, adminOnly, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, category_id, date_purchased, cost, department_id } = req.body;
+    const { name, category_id, department_id, date_purchased, cost } = req.body;
 
     const { data, error } = await supabase
       .from("assets")
-      .update({ name, category_id, date_purchased, cost, department_id })
-      .eq("id", id);
+      .update({ name, category_id, department_id, date_purchased, cost })
+      .eq("id", id)
+      .select();
 
     if (error) throw error;
+    if (!data || data.length === 0) return res.status(404).json({ success: false, message: "Asset not found" });
 
     res.json({ success: true, asset: data[0] });
   } catch (err) {
@@ -111,10 +146,9 @@ router.put("/:id", verifyToken, adminOnly, async (req, res) => {
 /* -----------------------------------------
    DELETE ASSET (ADMIN ONLY)
 ----------------------------------------- */
-router.delete("/:id", verifyToken, adminOnly, async (req, res) => {
+router.delete("/delete/:id", verifyToken, adminOnly, async (req, res) => {
   try {
     const { id } = req.params;
-
     const { error } = await supabase.from("assets").delete().eq("id", id);
     if (error) throw error;
 
