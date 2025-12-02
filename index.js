@@ -11,6 +11,7 @@ import UserAssetRoute from "./routes/UserAssetRoute.js"
 import DepartmentRoute from "./routes/DepartmentRoute.js"
 import CategoriesRoute from './routes/CategoriesRoute.js';
 import AdminStatsRoute from "./routes/AdminStatsRoute.js"
+import ProfileRoute from "./routes/ProfileRoute.js"
 
 dotenv.config(); // Load environment variables
 
@@ -53,6 +54,7 @@ app.use('/admin/categories', CategoriesRoute);
 app.use("/admin/departments",DepartmentRoute)
 app.use("/user/assets",UserAssetRoute)
 app.use("/admin/stats",AdminStatsRoute)
+app.use("/profile",ProfileRoute)
 
 // Start server
 app.listen(PORT, () => {
