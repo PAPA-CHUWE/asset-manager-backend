@@ -32,48 +32,50 @@ const verifyToken = (req, res, next) => {
 };
 
 /* -----------------------------------------
-   GET ALL ASSETS FOR USER
+   GET ALL ASSETS FOR USER (with creator name)
 ----------------------------------------- */
 router.get("/list/all", verifyToken, async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from("assets")
-      .select(`
-        id,
-        name,
-        category_id,
-        department_id,
-        date_purchased,
-        cost,
-        created_by,
-        created_at,
-        asset_categories!inner(name),
-        departments!inner(name)
-      `)
-      .eq("created_by", req.user.id); // only fetch assets created by this user
-
-    if (error) throw error;
-
-    const assets = data.map(a => ({
-      id: a.id,
-      name: a.name,
-      category_id: a.category_id,
-      category_name: a.asset_categories?.name || 'Unknown',
-      department_id: a.department_id,
-      department_name: a.departments?.name || 'Unknown',
-      date_purchased: a.date_purchased,
-      cost: a.cost,
-      created_by: a.created_by,
-      created_by_name: a.created_by,
-      created_at: a.created_at
-    }));
-
-    res.json({ success: true, assets });
-  } catch (err) {
-    console.error("❌ Error fetching user assets:", err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
+    try {
+      const { data, error } = await supabase
+        .from("assets")
+        .select(`
+          id,
+          name,
+          category_id,
+          department_id,
+          date_purchased,
+          cost,
+          created_by,
+          created_at,
+          asset_categories!inner(name),
+          departments!inner(name),
+          profiles!inner(full_name)
+        `)
+        .eq("created_by", req.user.id); // only fetch assets created by this user
+  
+      if (error) throw error;
+  
+      const assets = data.map(a => ({
+        id: a.id,
+        name: a.name,
+        category_id: a.category_id,
+        category_name: a.asset_categories?.name || 'Unknown',
+        department_id: a.department_id,
+        department_name: a.departments?.name || 'Unknown',
+        date_purchased: a.date_purchased,
+        cost: a.cost,
+        created_by: a.created_by,
+        created_by_name: a.profiles?.full_name || a.created_by, // use full name if available
+        created_at: a.created_at
+      }));
+  
+      res.json({ success: true, assets });
+    } catch (err) {
+      console.error("❌ Error fetching user assets:", err);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+  
 
 /* -----------------------------------------
    CREATE ASSET (USER)
