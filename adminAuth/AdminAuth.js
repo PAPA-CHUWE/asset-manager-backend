@@ -1,4 +1,3 @@
-// routes/AuthRoute.js
 import express from 'express';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
@@ -52,7 +51,7 @@ router.post('/login', async (req, res) => {
         department: userData.department,
       },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' } // adjust expiry if needed
+      { expiresIn: '1h' }
     );
 
     res.json({
@@ -76,7 +75,7 @@ router.post('/login', async (req, res) => {
 // ----------------- LOGOUT -----------------
 router.post('/logout', async (req, res) => {
   try {
-    // Supabase server-side sign out
+    // Supabase server-side sign out (optional, mainly client handles token removal)
     const { error } = await supabase.auth.signOut();
     if (error) return res.status(400).json({ error: error.message });
 
