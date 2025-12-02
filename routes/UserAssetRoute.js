@@ -32,7 +32,7 @@ const verifyToken = (req, res, next) => {
 };
 
 /* -----------------------------------------
-   GET ALL ASSETS FOR USER (with creator name)
+   GET ALL ASSETS FOR USER
 ----------------------------------------- */
 router.get("/list/all", verifyToken, async (req, res) => {
     try {
@@ -65,7 +65,7 @@ router.get("/list/all", verifyToken, async (req, res) => {
         date_purchased: a.date_purchased,
         cost: a.cost,
         created_by: a.created_by,
-        created_by_name: a.profiles?.full_name || a.created_by, // use full name if available
+        created_by_name: a.profiles?.full_name || 'Unknown', // <-- fetch full name
         created_at: a.created_at
       }));
   
