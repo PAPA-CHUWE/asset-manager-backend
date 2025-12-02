@@ -7,6 +7,7 @@ import AdminAuth from './adminAuth/AdminAuth.js';
 import UserRoute from "./routes/UserRoute.js"
 import { createAdminUsers } from './utils/GenerateAdmin.js';
 import AssetRoute from './routes/AssetRoute.js';
+import UserAssetRoute from "./routes/UserAssetRoute.js"
 import DepartmentRoute from "./routes/DepartmentRoute.js"
 import CategoriesRoute from './routes/CategoriesRoute.js';
 
@@ -49,6 +50,7 @@ app.use('/admin/users', UserRoute);
 app.use('/admin/assets', AssetRoute);
 app.use('/admin/categories', CategoriesRoute);
 app.use("/admin/departments",DepartmentRoute)
+app.use("/user/assets",UserAssetRoute)
 
 // Start server
 app.listen(PORT, () => {
