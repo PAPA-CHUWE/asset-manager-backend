@@ -122,24 +122,64 @@ router.post("/create", verifyToken, async (req, res) => {
 /* -----------------------------------------
    GET ASSET BY ID (USER)
 ----------------------------------------- */
+
 router.get("/list/:id", verifyToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { data, error } = await supabase.from("assets").select("*").eq("id", id);
-
-    if (error) throw error;
-    if (!data || data.length === 0) return res.status(404).json({ success: false, message: "Asset not found" });
-
-    // Ensure the user owns the asset
-    if (data[0].created_by !== req.user.id) {
-      return res.status(403).json({ success: false, message: "Access denied." });
+    try {
+      const { id } = req.params;
+  
+      // Fetch the asset
+      const { data: assetData, error: assetError } = await supabase
+        .from("assets")
+        .select(`
+          id,
+          name,
+          category_id,
+          department_id,
+          date_purchased,
+          cost,
+          created_by,
+          created_at,
+          asset_categories!inner(name),
+          departments!inner(name)
+        `)
+        .eq("id", id)
+        .single();
+  
+      if (assetError) throw assetError;
+      if (!assetData) return res.status(404).json({ success: false, message: "Asset not found" });
+  
+      // Ensure the user owns the asset
+      if (assetData.created_by !== req.user.id) {
+        return res.status(403).json({ success: false, message: "Access denied." });
+      }
+  
+      // Fetch creator's full name
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", assetData.created_by)
+        .single();
+  
+      const assetWithName = {
+        id: assetData.id,
+        name: assetData.name,
+        category_id: assetData.category_id,
+        category_name: assetData.asset_categories?.name || "Unknown",
+        department_id: assetData.department_id,
+        department_name: assetData.departments?.name || "Unknown",
+        date_purchased: assetData.date_purchased,
+        cost: assetData.cost,
+        created_by: assetData.created_by,
+        created_by_name: profileData?.full_name || "Unknown",
+        created_at: assetData.created_at
+      };
+  
+      res.json({ success: true, asset: assetWithName });
+    } catch (err) {
+      console.error("❌ Error fetching asset:", err);
+      res.status(500).json({ success: false, message: err.message });
     }
-
-    res.json({ success: true, asset: data[0] });
-  } catch (err) {
-    console.error("❌ Error fetching asset:", err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
+  });
+  
 
 export default router;
