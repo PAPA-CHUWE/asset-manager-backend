@@ -182,4 +182,80 @@ router.get("/list/:id", verifyToken, async (req, res) => {
   });
   
 
+  /* -----------------------------------------
+   GET USER ASSET STATS
+----------------------------------------- */
+router.get("/stats", verifyToken, async (req, res) => {
+    try {
+      const userId = req.user.id;
+  
+      // 1️⃣ Total assets created by the user
+      const { data: totalAssetsData, error: totalError, count: totalCount } = await supabase
+        .from("assets")
+        .select("id", { count: "exact" })
+        .eq("created_by", userId);
+  
+      if (totalError) throw totalError;
+  
+      // 2️⃣ Total cost of all assets
+      const { data: costData, error: costError } = await supabase
+        .from("assets")
+        .select("cost")
+        .eq("created_by", userId);
+  
+      if (costError) throw costError;
+  
+      const totalCost = costData.reduce((sum, a) => sum + Number(a.cost || 0), 0);
+  
+      // 3️⃣ Assets by category
+      const { data: categoryData, error: catError } = await supabase
+        .from("assets")
+        .select(`
+          category_id,
+          asset_categories!inner(name)
+        `)
+        .eq("created_by", userId);
+  
+      if (catError) throw catError;
+  
+      const assetsByCategory = categoryData.reduce((acc, item) => {
+        const name = item.asset_categories?.name || "Unknown";
+        acc[name] = (acc[name] || 0) + 1;
+        return acc;
+      }, {});
+  
+      // 4️⃣ Assets by department
+      const { data: deptData, error: deptError } = await supabase
+        .from("assets")
+        .select(`
+          department_id,
+          departments!inner(name)
+        `)
+        .eq("created_by", userId);
+  
+      if (deptError) throw deptError;
+  
+      const assetsByDepartment = deptData.reduce((acc, item) => {
+        const name = item.departments?.name || "Unknown";
+        acc[name] = (acc[name] || 0) + 1;
+        return acc;
+      }, {});
+  
+      res.json({
+        success: true,
+        stats: {
+          totalAssets: totalCount,
+          totalCost,
+          assetsByCategory,
+          assetsByDepartment
+        }
+      });
+  
+    } catch (err) {
+      console.error("❌ Error fetching user asset stats:", err);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+  
+
 export default router;
