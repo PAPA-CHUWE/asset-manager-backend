@@ -36,7 +36,8 @@ const verifyToken = (req, res, next) => {
 ----------------------------------------- */
 router.get("/list/all", verifyToken, async (req, res) => {
     try {
-      const { data, error } = await supabase
+      // Fetch assets created by this user
+      const { data: assetsData, error: assetsError } = await supabase
         .from("assets")
         .select(`
           id,
@@ -48,28 +49,38 @@ router.get("/list/all", verifyToken, async (req, res) => {
           created_by,
           created_at,
           asset_categories!inner(name),
-          departments!inner(name),
-          profiles!inner(full_name)
+          departments!inner(name)
         `)
-        .eq("created_by", req.user.id); // only fetch assets created by this user
+        .eq("created_by", req.user.id);
   
-      if (error) throw error;
+      if (assetsError) throw assetsError;
   
-      const assets = data.map(a => ({
-        id: a.id,
-        name: a.name,
-        category_id: a.category_id,
-        category_name: a.asset_categories?.name || 'Unknown',
-        department_id: a.department_id,
-        department_name: a.departments?.name || 'Unknown',
-        date_purchased: a.date_purchased,
-        cost: a.cost,
-        created_by: a.created_by,
-        created_by_name: a.profiles?.full_name || 'Unknown', // <-- fetch full name
-        created_at: a.created_at
-      }));
+      // For each asset, fetch creator's full name from profiles
+      const assetsWithNames = await Promise.all(
+        assetsData.map(async (a) => {
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", a.created_by)
+            .single();
   
-      res.json({ success: true, assets });
+          return {
+            id: a.id,
+            name: a.name,
+            category_id: a.category_id,
+            category_name: a.asset_categories?.name || "Unknown",
+            department_id: a.department_id,
+            department_name: a.departments?.name || "Unknown",
+            date_purchased: a.date_purchased,
+            cost: a.cost,
+            created_by: a.created_by,
+            created_by_name: profileData?.full_name || "Unknown",
+            created_at: a.created_at
+          };
+        })
+      );
+  
+      res.json({ success: true, assets: assetsWithNames });
     } catch (err) {
       console.error("❌ Error fetching user assets:", err);
       res.status(500).json({ success: false, message: err.message });
