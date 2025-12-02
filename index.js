@@ -48,7 +48,7 @@ app.use('/admin/auth', AdminAuth);
 app.use('/admin/users', UserRoute);
 app.use('/admin/assets', AssetRoute);
 app.use('/admin/categories', CategoriesRoute);
-app.use("/admin/department",DepartmentRoute)
+app.use("/admin/departments",DepartmentRoute)
 
 // Start server
 app.listen(PORT, () => {
