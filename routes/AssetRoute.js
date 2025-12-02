@@ -45,6 +45,7 @@ const adminOnly = (req, res, next) => {
    GET ALL ASSETS
    Optional: include category_name & department_name
 ----------------------------------------- */
+
 router.get("/list/all", verifyToken, async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -66,10 +67,17 @@ router.get("/list/all", verifyToken, async (req, res) => {
 
     // Map joined data to frontend-friendly keys
     const assets = data.map(a => ({
-      ...a,
-      category_name: a.asset_categories?.name,
-      department_name: a.departments?.name,
-      created_by_name: a.created_by // optional: could join with users table if needed
+      id: a.id,
+      name: a.name,
+      category_id: a.category_id,
+      category_name: a.asset_categories?.name || 'Unknown',
+      department_id: a.department_id,
+      department_name: a.departments?.name || 'Unknown',
+      date_purchased: a.date_purchased,
+      cost: a.cost,
+      created_by: a.created_by,
+      created_by_name: a.created_by, // Optional: join with users table if needed
+      created_at: a.created_at
     }));
 
     res.json({ success: true, assets });
@@ -78,6 +86,7 @@ router.get("/list/all", verifyToken, async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 /* -----------------------------------------
    GET ASSET BY ID
