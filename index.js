@@ -7,6 +7,7 @@ import AdminAuth from './adminAuth/AdminAuth.js';
 import UserRoute from "./routes/UserRoute.js"
 import { createAdminUsers } from './utils/GenerateAdmin.js';
 import AssetRoute from './routes/AssetRoute.js';
+import DepartmentRoute from "./routes/DepartmentRoute.js"
 import CategoriesRoute from './routes/CategoriesRoute.js';
 
 dotenv.config(); // Load environment variables
@@ -47,6 +48,7 @@ app.use('/admin/auth', AdminAuth);
 app.use('/admin/users', UserRoute);
 app.use('/admin/assets', AssetRoute);
 app.use('/admin/categories', CategoriesRoute);
+app.use("/admin/department",DepartmentRoute)
 
 // Start server
 app.listen(PORT, () => {
